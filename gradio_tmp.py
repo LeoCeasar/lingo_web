@@ -1,6 +1,6 @@
 import gradio as gr
 import pandas as pd
-
+from utils import *
 # 初始空表格，假设你有4列
 df = pd.DataFrame(columns=["起点x1", "起点y1", "终点x2", "终点y2", "动作"])
 
