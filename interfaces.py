@@ -21,6 +21,8 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
 
     # 读取 .obj 文件
     mesh = trimesh.load_mesh(path)
+    x,z,y=mesh.extents
+    
     # 目标体素尺寸
     target_shape = (400, 100, 600)
     mesh.fill_holes()
@@ -57,6 +59,7 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
     # 获取体素网格的布尔值表示
     voxel_grid = voxel_grid.matrix
     np.save(output, voxel_grid)
+    pixel_to_scene_cordinate_ratio=min(400/x,600/y)
     return voxel_grid
         
     
