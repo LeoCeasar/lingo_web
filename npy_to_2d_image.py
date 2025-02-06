@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
-def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max'):
+def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max',show_image=False):
     """
     将npy格式的体素化数据转换为2D图像。
     
@@ -36,17 +36,18 @@ def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max'
 
     # 使用PIL保存为图像
     image = Image.fromarray(projected_data)
-    image.save(output_image_path)
+    plt.axis('off')  # 不显示坐标轴
     print(f"转换完成，图像保存至 {output_image_path}")
 
-    # 可选：显示图像
     plt.imshow(projected_data, cmap='gray')
-    plt.axis('off')  # 不显示坐标轴
+    image.save(output_image_path)
+    # 可选：显示图像
     plt.show()
 
-# 示例：将体素数据转换为 2D 图像
-npy_file = './cache/livingroom_voxelized.npy'  # 替换为你自己的文件路径
-output_image_path = './outputs/livingroom_projection.png'  # 输出图像路径
 
-# 调用函数进行转换
-npy_to_2d_image(npy_file, output_image_path, projection_type='max')
+if __name__ == "__main__":
+    # 示例：将体素数据转换为 2D 图像
+    npy_file = './cache/livingroom_voxelized.npy'  # 替换为你自己的文件路径
+    output_image_path = './outputs/livingroom_projection.png'  # 输出图像路径
+    # 调用函数进行转换
+    npy_to_2d_image(npy_file, output_image_path, projection_type='max')
