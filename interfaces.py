@@ -5,6 +5,7 @@ from  trimesh.voxel.creation import voxelize
 from datetime import datetime
 from utils import *
 import json
+import os
 from os.path import isdir,isfile,join as path_join,exists as path_exists
 from  shutil import copy2
 import warnings
