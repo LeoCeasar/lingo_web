@@ -1,4 +1,7 @@
 gradio
-pandas
-trimesh
+matplotlib
 numpy
+pandas
+PIL
+trimesh
+scipy
