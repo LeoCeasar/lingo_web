@@ -2,3 +2,5 @@ gradio
 pandas
 trimesh
 numpy
+matplotlib
+scipy

@@ -5,7 +5,7 @@ import queue
 import threading
 import json
 import time
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from matplotlib import pyplot as plt
 from datetime import datetime
 import pandas as pd
@@ -93,6 +93,7 @@ def process_file(file):
     os.makedirs(f"./processed_images", exist_ok=True)
     global is_init
     is_init = False
+
     # 体素化图像
     voxelized_result=voxelize_obj(file,output=f"./outputs/{task.task_id}/scene_voxelized.npy")
     show_voxelized_result(voxelized_result,f"./processed_images/{task.task_id}.png")
@@ -104,7 +105,132 @@ def process_file(file):
     # 将任务信息发送到消息队列
     task_queue.put(task)
     
-    return task.task_id, img_path
+    return task.task_id, img_path, img_path
+
+# 根据表格内容修改图像的函数
+def preview_action(img, table):
+    # 确保 img 是一个 PIL 图像对象
+    if isinstance(img, str):
+        img = Image.open(img)  # 如果 img 是文件路径，加载图像
+    draw = ImageDraw.Draw(img)
+    width, height = img.size
+    r = min(width,height)/100
+
+    # 遍历表格中的数据，绘制起点和终点坐标以及线条
+    for _, row in table.iterrows():
+        try:
+            # 获取表格中的坐标和动作
+            start_x = row["起点x1"] if row["起点x1"] else 0
+            start_y = row["起点y1"] if row["起点y1"] else 0
+            end_x = row["终点x2"] if row["终点x2"] else 0
+            end_y = row["终点y2"] if row["终点y2"] else 0
+            action = row["动作"]
+
+            # 绘制起点和终点
+            # draw.line([start_x, start_y, end_x, end_y], fill="blue", width=2)  # 画一条线
+            draw.ellipse([start_x-r, start_y-r, start_x+r, start_y+r], fill="red", outline="black")  # 画起点
+            draw.ellipse([end_x-r, end_y-r, end_x+r, end_y+r], fill="green", outline="black")  # 画终点
+
+            # 在图像上添加动作文本
+            draw.text((start_x, start_y - 10), action, fill="black")
+        except Exception as e:
+            print(f"Error drawing row {row}: {e}")
+
+    return img
+
+
+def preview_action(img, table):
+    # 确保 img 是一个 PIL 图像对象
+    if isinstance(img, str):
+        img = Image.open(img)  # 如果 img 是文件路径，加载图像
+    draw = ImageDraw.Draw(img)
+    width, height = img.size
+    r = min(width, height) / 100  # 计算圆的半径
+
+    # 选择字体，这里使用默认字体
+    try:
+        font = ImageFont.truetype("arial.ttf", 15)
+    except IOError:
+        font = ImageFont.load_default()
+
+    # 确保表格中的坐标列是数字类型，无法转换的会被设置为 NaN，默认值为 0
+    table["起点x1"] = pd.to_numeric(table["起点x1"], errors='coerce').fillna(0)
+    table["起点y1"] = pd.to_numeric(table["起点y1"], errors='coerce').fillna(0)
+    table["终点x2"] = pd.to_numeric(table["终点x2"], errors='coerce').fillna(0)
+    table["终点y2"] = pd.to_numeric(table["终点y2"], errors='coerce').fillna(0)
+
+    # 获取图像的中心点坐标
+    center_x = width / 2
+    center_y = height / 2
+
+    # 遍历表格中的数据，绘制点并标注数字
+    for idx, row in table.iterrows():
+        try:
+            # 获取表格中的坐标
+            x1_center = row["起点x1"]
+            y1_center = row["起点y1"]
+
+            # 打印坐标进行调试
+            print(f"Point {idx + 1}: (center_x={x1_center}, center_y={y1_center})")
+
+            # 将表格中的中心坐标转换为相对于图像左上角的坐标
+            start_x = center_x + x1_center  # 从图像中心计算起点x
+            start_y = center_y - y1_center  # 从图像中心计算起点y
+
+            # 将中心点坐标转换为圆形绘制范围
+            start_x1 = start_x - r  # 圆形的左上角x坐标
+            start_y1 = start_y - r  # 圆形的左上角y坐标
+            start_x2 = start_x + r  # 圆形的右下角x坐标
+            start_y2 = start_y + r  # 圆形的右下角y坐标
+
+            # 绘制点
+            draw.ellipse([start_x1, start_y1, start_x2, start_y2], fill="red", outline="black")  # 画点
+
+            # 在点上标注数字
+            text_x = start_x + r  # 标注数字的x位置
+            text_y = start_y - (2 * r)  # 标注数字的y位置
+
+            # 如果文本位置超出了图像的范围，做一些调整
+            text_x = max(0, min(text_x, width - 20))  # 确保文本x坐标在图像范围内
+            text_y = max(0, min(text_y, height - 20))  # 确保文本y坐标在图像范围内
+
+            draw.text((text_x, text_y), str(idx + 1), fill="black", font=font)  # 标注数字，idx+1表示从1开始
+
+
+            # 获取表格中的坐标
+            x2_center = row["终点x2"]
+            y2_center = row["终点y2"]
+
+            # 打印坐标进行调试
+            print(f"Point {idx + 1}: (center_x={x2_center}, center_y={y2_center})")
+
+            # 将表格中的中心坐标转换为相对于图像左上角的坐标
+            start_x = center_x + x2_center  # 从图像中心计算起点x
+            start_y = center_y - y2_center  # 从图像中心计算起点y
+
+            # 将中心点坐标转换为圆形绘制范围
+            start_x1 = start_x - (2*r)  # 圆形的左上角x坐标
+            start_y1 = start_y - (2*r)  # 圆形的左上角y坐标
+            start_x2 = start_x + (2*r)  # 圆形的右下角x坐标
+            start_y2 = start_y + (2*r)  # 圆形的右下角y坐标
+
+            # 绘制点
+            draw.ellipse([start_x1, start_y1, start_x2, start_y2], fill="green", outline="black")  # 画点
+
+            # 在点上标注数字
+            text_x = start_x + r  # 标注数字的x位置
+            text_y = start_y - (2 * r)  # 标注数字的y位置
+
+            # 如果文本位置超出了图像的范围，做一些调整
+            text_x = max(0, min(text_x, width - 20))  # 确保文本x坐标在图像范围内
+            text_y = max(0, min(text_y, height - 20))  # 确保文本y坐标在图像范围内
+
+            draw.text((text_x, text_y), str(idx + 1), fill="black", font=font)  # 标注数字，idx+1表示从1开始
+
+        except Exception as e:
+            print(f"Error drawing row {row}: {e}")
+
+    return img
 
 # 用于提交数据，返回视频和结果文件路径
 def submit_task(task_id):
@@ -153,6 +279,9 @@ with gr.Blocks() as demo:
 
         file_input = gr.File(label="上传场景文件")
         img_output = gr.Image(label="场景图像", interactive=False)
+        img_size = gr.HTML(label="图像大小")
+        img_path = gr.Textbox(label="img path")
+        img_path.visible = False
         
         # 创建表格
         table = gr.DataFrame(df, label="动作规划")
@@ -172,10 +301,12 @@ with gr.Blocks() as demo:
         video_output = gr.Textbox(label="视频链接", interactive=False)
         download_output = gr.Textbox(label="下载链接", interactive=False)
 
-        file_input.upload(process_file, inputs=file_input, outputs=[task_id_output, img_output])
+        file_input.upload(process_file, inputs=file_input, outputs=[task_id_output, img_output, img_path])
 
         # 按钮事件
         add_button.click(update_table, inputs=[act_dropdown, table], outputs=table)  # 更新表格
+        preview_button.click(preview_action, inputs=[img_path, table], outputs=img_output)  # 点击预览时，根据表格内容生成图像并展示
+
         # submit_button.click(submit_task, inputs=[file_upload, gr.State()], outputs=[result_display, image_display, image_display])  # 提交时处理任务并显示结果
         # submit_button.click(submit_task, inputs=task_id_output, outputs=[video_output, download_output])
         # 设置自定义CSS来调整高度
