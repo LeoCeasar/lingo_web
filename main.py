@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 from datetime import datetime
 import pandas as pd
 from interfaces import *
-
+from npy_to_2d_image import npy_to_2d_image
 
 
 # 定义任务类
@@ -110,11 +110,13 @@ def process_file(file):
 
     # 保存图像路径
     img_path = f"./{task_output_dir}/processed_images.png"
-
+    NPY_PATH =f"{task_output_dir}/scene_voxelized.npy"
     # 体素化图像
-    voxelized_result = voxelize_obj(task.file_path, output=f"{task_output_dir}/scene_voxelized.npy")
+    voxelized_result=voxelize_obj(task.file_path, output=NPY_PATH)
     show_voxelized_result(voxelized_result, img_path)
-
+    # npy_to_2d_image(NPY_PATH, img_path, projection_type='max')
+    
+    
     # 更新任务的图片路径
     task.image_path = img_path
     task.update_status('npy')
