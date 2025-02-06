@@ -47,7 +47,7 @@ def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max'
 
 if __name__ == "__main__":
     # 示例：将体素数据转换为 2D 图像
-    npy_file = './cache/livingroom_voxelized.npy'  # 替换为你自己的文件路径
+    npy_file = './cache/livingroom_voxelized.npy'  # 替换文件路径
     output_image_path = './outputs/livingroom_projection.png'  # 输出图像路径
     # 调用函数进行转换
     npy_to_2d_image(npy_file, output_image_path, projection_type='max')
