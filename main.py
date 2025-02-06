@@ -62,7 +62,7 @@ def process_task_queue():
         task.update_status('completed')
 
         # 输出任务信息
-        print(f"Task {task.task_id} completed. Image:{task.image_path}")
+        print(f"Task {task.task_id} completed.")
 
         task_queue.task_done()
 

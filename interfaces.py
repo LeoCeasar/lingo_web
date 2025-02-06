@@ -1,11 +1,11 @@
 
 import numpy as np
 import trimesh
+from  trimesh.voxel.creation import voxelize
 from datetime import datetime
 from utils import *
 import json
 from os.path import isdir,isfile,join as path_join,exists as path_exists
-from  trimesh.voxel.creation import voxelize
 from  shutil import copy2
 import warnings
 import matplotlib.pyplot as plt
@@ -19,7 +19,7 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
     '''
 
     # 读取 .obj 文件
-    mesh = trimesh.load_mesh(path).to_mesh()
+    mesh = trimesh.load_mesh(path)
     # 目标体素尺寸
     target_shape = (400, 100, 600)
 

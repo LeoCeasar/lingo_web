@@ -1,6 +1,10 @@
 gradio
+matplotlib
+numpy
 pandas
-trimesh
+PIL
+trimesh==4.6.1
+scipy
 numpy
 matplotlib
 scipy
