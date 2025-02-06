@@ -3,7 +3,7 @@ matplotlib
 numpy
 pandas
 PIL
-trimesh
+trimesh==4.6.1
 scipy
 numpy
 matplotlib
