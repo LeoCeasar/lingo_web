@@ -9,7 +9,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from datetime import datetime
 import pandas as pd
-
+from interfaces import *
 # 定义任务类
 class Task:
     def __init__(self, file_path):
@@ -58,7 +58,8 @@ def process_task_queue():
         task.update_status('completed')
 
         # 输出任务信息
-        print(f"Task {task.task_id} completed.")
+        print(f"Task {task.task_id} completed. Image:{task.image_path}")
+
         task_queue.task_done()
 
 # 启动一个线程来处理任务队列
@@ -89,16 +90,16 @@ def process_file(file):
     task.update_status('uploaded')  # 更新任务状态为上传成功
     
     os.makedirs(f"./outputs/{task.task_id}", exist_ok=True)
+    os.makedirs(f"./processed_images", exist_ok=True)
     global is_init
     is_init = False
-    
+    # 体素化图像
+    voxelized_result=voxelize_obj(file,output=f"./outputs/{task.task_id}/scene_voxelized.npy")
+    show_voxelized_result(voxelized_result,f"./processed_images/{task.task_id}.png")
     # 保存图像路径
-    # img = Image.open(file.name)
-    # img_path = f"./outputs/{task.task_id}/processed_images.png"
-    # img.save(img_path)
+    img_path = f"./processed_images/{task.task_id}.png"
     
-    # task.image_path = img_path  # 更新任务的图片路径
-    img_path = task.image_path
+    task.image_path = img_path  # 更新任务的图片路径
     
     # 将任务信息发送到消息队列
     task_queue.put(task)

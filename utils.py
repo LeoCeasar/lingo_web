@@ -7,9 +7,9 @@ import numpy as np
 from scipy.ndimage import binary_fill_holes
 import warnings
 from  trimesh.voxel.creation import voxelize
-import datetime
+from datetime import datetime
 import os
-
+from interfaces import *
 ##############################################################
 #               以下为工具函数/类（并非接口）                   #
 ##############################################################
@@ -23,7 +23,7 @@ class inference_info:
     actions:List
     scene_path:str
     scene_name:str
-    submitted_time:datetime.datetime
+    submitted_time:datetime
     _is_submitted=False # 标记数据是否已经进入过队列
     def is_valid(self)->bool:
         msg=""
@@ -63,7 +63,7 @@ class inference_info:
     def __set_submitted_time__(self,overwrite=False)->None:
         if not self._is_submitted or overwrite:
             self._is_submitted=True
-            self.submitted_time=datetime.datetime.now()
+            self.submitted_time=datetime.now()
         else:
             warnings(f"Operation aborted, as the submitted status is configured as {self._is_submitted} and submitted time being {self.submitted_time}.")      
 
