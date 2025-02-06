@@ -5,11 +5,15 @@ import queue
 import threading
 import json
 import time
+import shutil
 from PIL import Image, ImageDraw, ImageFont
 from matplotlib import pyplot as plt
 from datetime import datetime
 import pandas as pd
 from interfaces import *
+
+
+
 # 定义任务类
 class Task:
     def __init__(self, file_path):
@@ -84,60 +88,43 @@ def update_table(selected_option, table):
         updated_table = pd.concat([table, new_row], ignore_index=True)  # 使用pd.concat合并
     return updated_table
 
+
 # 处理文件上传并创建任务
 def process_file(file):
     task = Task(file.name)  # 创建任务对象
-    task.update_status('uploaded')  # 更新任务状态为上传成功
-    
-    os.makedirs(f"./outputs/{task.task_id}", exist_ok=True)
-    os.makedirs(f"./processed_images", exist_ok=True)
+    print(f"processing {file.name}")
+
+    # 创建输出目录
+    task_output_dir = f"./outputs/{task.task_id}"
+    os.makedirs(task_output_dir, exist_ok=True)
     global is_init
     is_init = False
 
-    # 体素化图像
-    voxelized_result=voxelize_obj(file,output=f"./outputs/{task.task_id}/scene_voxelized.npy")
-    show_voxelized_result(voxelized_result,f"./processed_images/{task.task_id}.png")
+    # 文件转存：复制上传的文件到目标目录
+    task.file_path = os.path.join(task_output_dir, os.path.basename(file.name))
+
+    shutil.copy(file.name, task.file_path)
+
+    print(f"task file path uploaded: {task.file_path}")
+    task.update_status('uploaded')  # 更新任务状态为上传成功
+
     # 保存图像路径
-    img_path = f"./processed_images/{task.task_id}.png"
-    
-    task.image_path = img_path  # 更新任务的图片路径
-    
+    img_path = f"./{task_output_dir}/processed_images.png"
+
+    # 体素化图像
+    voxelized_result = voxelize_obj(task.file_path, output=f"{task_output_dir}/scene_voxelized.npy")
+    show_voxelized_result(voxelized_result, img_path)
+
+    # 更新任务的图片路径
+    task.image_path = img_path
+    task.update_status('npy')
+
     # 将任务信息发送到消息队列
     task_queue.put(task)
-    
+
     return task.task_id, img_path, img_path
 
 # 根据表格内容修改图像的函数
-def preview_action(img, table):
-    # 确保 img 是一个 PIL 图像对象
-    if isinstance(img, str):
-        img = Image.open(img)  # 如果 img 是文件路径，加载图像
-    draw = ImageDraw.Draw(img)
-    width, height = img.size
-    r = min(width,height)/100
-
-    # 遍历表格中的数据，绘制起点和终点坐标以及线条
-    for _, row in table.iterrows():
-        try:
-            # 获取表格中的坐标和动作
-            start_x = row["起点x1"] if row["起点x1"] else 0
-            start_y = row["起点y1"] if row["起点y1"] else 0
-            end_x = row["终点x2"] if row["终点x2"] else 0
-            end_y = row["终点y2"] if row["终点y2"] else 0
-            action = row["动作"]
-
-            # 绘制起点和终点
-            # draw.line([start_x, start_y, end_x, end_y], fill="blue", width=2)  # 画一条线
-            draw.ellipse([start_x-r, start_y-r, start_x+r, start_y+r], fill="red", outline="black")  # 画起点
-            draw.ellipse([end_x-r, end_y-r, end_x+r, end_y+r], fill="green", outline="black")  # 画终点
-
-            # 在图像上添加动作文本
-            draw.text((start_x, start_y - 10), action, fill="black")
-        except Exception as e:
-            print(f"Error drawing row {row}: {e}")
-
-    return img
-
 
 def preview_action(img, table):
     # 确保 img 是一个 PIL 图像对象
