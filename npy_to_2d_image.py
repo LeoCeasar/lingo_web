@@ -12,8 +12,7 @@ def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max'
     projection_type (str): 投影方式，'max' 或 'average'。默认为 'max'。
     返回:
     None
-    """a
-
+    """
     # 加载npy文件
     voxel_data = np.load(npy_file)
 
@@ -48,13 +47,10 @@ def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max'
     plt.axis('off')  # 不显示坐标轴
     plt.show()
 
+if __name__=="__main__":
+    # 路径
+    npy_file = './cache/livingroom_voxelized.npy'  # 文件路径（需更改）
+    output_image_path = './outputs/livingroom_projection.png'  # 输出图像路径（需更改）
 
-
-
-
-# 路径
-npy_file = './cache/livingroom_voxelized.npy'  # 文件路径（需更改）
-output_image_path = './outputs/livingroom_projection.png'  # 输出图像路径（需更改）
-
-# 调用函数进行转换
-npy_to_2d_image(npy_file, output_image_path, projection_type='max')
+    # 调用函数进行转换
+    npy_to_2d_image(npy_file, output_image_path, projection_type='max')

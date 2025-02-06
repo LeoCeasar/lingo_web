@@ -23,6 +23,7 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
     mesh = trimesh.load_mesh(path)
     # 目标体素尺寸
     target_shape = (400, 100, 600)
+    mesh.fill_holes()
 
     # 计算模型的长宽高
     bounds_min, bounds_max = mesh.bounds
@@ -41,7 +42,6 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
     # 计算缩放比例，使模型正好适配目标体素网格
     scaling_factors = np.array(target_shape) / model_size
     scaling_factor = min(scaling_factors)*0.995  # 保证模型按最小比例等比缩放
-
     # 缩放模型
     mesh.apply_scale(scaling_factor)
     # 平移模型到体素网格中心
@@ -127,6 +127,7 @@ def send_to_queue(path):
 def show_voxelized_result(ndarray:np.ndarray,path:str):
     processed_arr_summary=-np.sum(ndarray[:,:70,:],axis=1)
     # 使用 imshow 函数将数组显示为图片
-    plt.imshow(processed_arr_summary, cmap='gray')  
+    plt.imshow(processed_arr_summary, cmap='gray') 
+    plt.rcParams['figure.autolayout'] = True
     plt.axis('off')
-    plt.savefig(path)
+    plt.savefig(path,bbox_inches='tight', pad_inches=0)

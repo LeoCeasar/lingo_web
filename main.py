@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 from datetime import datetime
 import pandas as pd
 from interfaces import *
-from npy_to_2d_image import npy_to_2d_image
+from npy_to_2d_image import *
 
 
 # 定义任务类
