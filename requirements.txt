@@ -5,3 +5,6 @@ pandas
 PIL
 trimesh
 scipy
+numpy
+matplotlib
+scipy
