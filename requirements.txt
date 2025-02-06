@@ -1,2 +1,4 @@
 gradio
 pandas
+trimesh
+numpy

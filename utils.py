@@ -4,21 +4,108 @@
 
 from typing import List
 import numpy as np
+from scipy.ndimage import binary_fill_holes
+import warnings
+from  trimesh.voxel.creation import voxelize
+import datetime
+import os
 
+##############################################################
+#               以下为工具函数/类（并非接口）                   #
+##############################################################
 
-def scene2npy(path:str,output:str="./cache")->np.ndarray:
-    '''
-    从指定路径下读取场景文件，并将其采样，转化为高维数组，存储至输入数据缓存区（./cache）
-    @param path:str 场景文件的路径
-    @return:np.ndarray 高维np数组的转化结果
-    '''
+class inference_info:
+    ###
+    # 用来装载准备时推理所需的数据，配有一个格式验证器
+    ###
+    start_locations:List
+    end_locations:List
+    actions:List
+    scene_path:str
+    scene_name:str
+    submitted_time:datetime.datetime
+    _is_submitted=False # 标记数据是否已经进入过队列
+    def is_valid(self)->bool:
+        msg=""
+        if (self.start_locations and self.end_locations and self.actions):
+            if not (len(self.start_locations)==len(self.end_locations)==len(self.actions)):
+                msg+=f"The length of start_locations, end_locations and actions should be equal, but the input being({len(self.start_locations)},{len(self.end_locations)},{len(self.actions)})\n"
+        else:
+            msg+="Following information is missing: "
+            if not self.start_locations:
+                msg+="start_locations, "
+            if not self.end_locations:
+                msg+="end_locations, "
+            if not self.actions:
+                msg+="actions, "
+            msg=msg[:-1]+".\n"
+        if not os.path.exists(self.scene_path):# 如果场景路径不存在
+            msg+=f"scene_path is provided as {self.scene_path} yet do not exist.\n"
+        else:
+            if os.path.isdir(self.scene_path):# 如果路径存在但是个目录
+                msg+=f"scene_path expects a file but {self.scene_path} points to a directory."
+            elif os.path.basename(self.scene_path)!=self.scene_name:# 如果路径存在，不是目录（是文件），检查路径和记录的场景名是否一致
+                msg+="Inconsistent scene_path and scene_name detected: the path is {self.scene_path} yet the name is {self.scene_name}.\n"
+        if (self._is_submitted and not self.submitted_time) or (not self._is_submitted and self.submitted_time): # 如果标记为已经上传却没有上传时间，或标记为还未上传却有上传时间
+            msg+="Inconsistent submit marker and submitted time detected: the marker is {self._is_submitted} yet the submitted time is {self.submitted_time}\n"
+        if len(msg)==0:
+            return True
+        else:
+            print(msg)
+            return False
+
+    def set_scene_path(self,path:str)->None:
+        #设置scene_path并根据path更新scene_name
+        #该方法继承basename的行为，并不检查路径的有效性
+        self.scene_path=path
+        self.scene_name=os.path.basename(path)
+
+    def __set_submitted_time__(self,overwrite=False)->None:
+        if not self._is_submitted or overwrite:
+            self._is_submitted=True
+            self.submitted_time=datetime.datetime.now()
+        else:
+            warnings(f"Operation aborted, as the submitted status is configured as {self._is_submitted} and submitted time being {self.submitted_time}.")      
+
+def fill_voxel_matrix(original_matrix):
+    """
+    将体素矩阵的内部区域填充为 True。
+    假设 original_matrix 的 True 表示外壳。
+    """
+    # 使用 binary_fill_holes 对三维矩阵进行内部填充
+    filled_matrix = binary_fill_holes(original_matrix)
     
-def prep_lingo_job(start_locations:List,end_locations:List,actions:List,output:str="./queue")->bool:
-    '''
-    接收模型的起始/终止位置以及行动提示词，并整理模型输入至“./queue”，等待作业队列系统处理。
-    @param start_locations:List 起始坐标列表
-    @param start_locations:List 终止坐标列表
-    @param start_locations:List 行动提示词列表
-    @return:bool 操作是否成功（相关输入是否齐全）
-    '''
-    assert len(start_locations)==len(end_locations)==len(actions) # 三项输入应当等长
+    return filled_matrix
+
+
+def pad_voxel_matrix_with_y_padding(original_matrix, target_shape):
+    """
+    将体素矩阵填充到目标尺寸，y轴的padding拼接在原矩阵的末尾，其余维度居中填充。
+    """
+    # 获取原始矩阵的形状
+    original_shape = np.array(original_matrix.shape)
+    target_shape = np.array(target_shape)
+
+    # 计算需要填充的数量
+    padding = target_shape - original_shape
+
+    # 分别计算 x 和 z 轴（对称填充）和 y 轴（只在末尾填充）的填充量
+    x_padding = padding[0] // 2
+    z_padding = padding[2] // 2
+    y_padding_start = 0
+    y_padding_end = padding[1]
+
+    # 构造全False的目标矩阵
+    padded_matrix = np.zeros(target_shape, dtype=bool)
+
+    # 构造切片：x 和 z 居中填充，y 在末尾拼接
+    slices = (
+        slice(x_padding, x_padding + original_shape[0]),  # x 轴填充
+        slice(0, original_shape[1]),                      # y 轴不填充开始部分
+        slice(z_padding, z_padding + original_shape[2])   # z 轴填充
+    )
+
+    # 将原始矩阵放置到目标矩阵中
+    padded_matrix[slices] = original_matrix
+
+    return padded_matrix
