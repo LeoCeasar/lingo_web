@@ -9,7 +9,9 @@ import warnings
 from  trimesh.voxel.creation import voxelize
 from datetime import datetime
 import os
+import pickle
 from interfaces import *
+from collections import UserDict
 ##############################################################
 #               以下为工具函数/类（并非接口）                   #
 ##############################################################
@@ -109,3 +111,29 @@ def pad_voxel_matrix_with_y_padding(original_matrix, target_shape):
     padded_matrix[slices] = original_matrix
 
     return padded_matrix
+
+class PersistentDict(UserDict):
+    def __init__(self, id):
+        self.od = id
+        # 从文件加载现有数据
+        if os.path.exists(f'/cache/{self.id}.pickle'):
+            with open(f'/cache/{self.id}.pickle', 'rb') as f:
+                self.data = pickle.load(f)
+        else:
+            self.data = {}
+
+    def save(self):
+        # 将数据保存到文件
+        try:
+            with open(f'{self.id}.pickle', 'r') as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            return None
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self.save()  # 每次修改后自动保存
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self.save()
