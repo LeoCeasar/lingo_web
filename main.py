@@ -12,7 +12,7 @@ from datetime import datetime
 import pandas as pd
 from interfaces import *
 from npy_to_2d_image import *
-
+from video_renderer import *
 
 # 定义任务类
 class Task:
@@ -111,7 +111,6 @@ def preview_action(task, table):
     global act_color
     img = task.image_path
     print(f"task:{task}")
-    print("####################################")
     print(img)
     ratio=image_name_to_p2c_ratio_map[img]
     if isinstance(img, str):
@@ -213,6 +212,14 @@ def submit_task(task, route_df):
 
     ## process task by lingo model
 
+
+    # 将模型输出导入到vis.blend内
+    pass
+    # 将动作序列加载为动画
+    pass
+    # 将动画渲染并输出为视频
+    render_example_video("./vis.blend",f"./outputs/{task.task_id}/processed_videos.mp4")
+    
     task.video_path = video_path
     task.result_path = result_path
     task.update_status('completed')  # 更新状态为已完成
