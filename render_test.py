@@ -1,7 +1,7 @@
 import bpy
 
 # 打开.blend文件
-blend_file_path = "./vis.blend"
+blend_file_path = "vis.blend"
 bpy.ops.wm.open_mainfile(filepath=blend_file_path)
 
 # 设置渲染引擎为 Cycles
