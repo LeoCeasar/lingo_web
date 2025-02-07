@@ -36,42 +36,13 @@ class Task:
 # 动作可选项
 act_ops = ["walk", "run", "pick up", "put down", "lie down"]
 
-# 创建一个简单的任务队列
-task_queue = queue.Queue()
+# 预览轨迹的颜色设置
+act_color = ["red", "orange", "blue", "yellow", "green"]
+
 is_init = False
 image_name_to_p2c_ratio_map={}
 
-# 模拟任务处理的后台线程
-def process_task_queue():
-    while True:
-        # 从队列中取出任务并进行处理
-        task = task_queue.get()
-        if task is None:
-            break
-
-        # 模拟文件处理
-        task.update_status('uploaded')
-        time.sleep(2)  # 假设这里做一些处理
-        task.image_path = f"processed_images/{task.task_id}.png"
-        task.update_status('processing')
-        
-        # 模拟生成视频和结果文件
-        time.sleep(3)  # 假设生成视频和结果文件需要一些时间
-        task.video_path = f"processed_videos/{task.task_id}_video.mp4"
-        task.result_path = f"processed_results/{task.task_id}_result.zip"
-        task.update_status('completed')
-
-        # 输出任务信息
-        print(f"Task {task.task_id} completed.")
-
-        task_queue.task_done()
-
-# 启动一个线程来处理任务队列
-thread = threading.Thread(target=process_task_queue, daemon=True)
-thread.start()
-
-
-# 初始空表格，假设你有5列，初始化时包含一条数据行
+# 初始空表格，有5列，初始化时包含一条数据行
 df = pd.DataFrame(columns=["起点x1", "起点y1", "终点x2", "终点y2", "动作"])
 
 # 表格的更新函数
@@ -135,10 +106,14 @@ def process_file(file):
 
 # 根据表格内容修改图像的函数
 
-def preview_action(img, table):
-    ratio=image_name_to_p2c_ratio_map[img]
+def preview_action(task, table):
     # 确保 img 是一个 PIL 图像对象
-    img = state.image_path
+    global act_color
+    img = task.image_path
+    print(f"task:{task}")
+    print("####################################")
+    print(img)
+    ratio=image_name_to_p2c_ratio_map[img]
     if isinstance(img, str):
         img = Image.open(img)  # 如果 img 是文件路径，加载图像
     draw = ImageDraw.Draw(img)
@@ -182,7 +157,7 @@ def preview_action(img, table):
             start_y2 = start_y + r  # 圆形的右下角y坐标
 
             # 绘制点
-            draw.ellipse([start_x1, start_y1, start_x2, start_y2], fill="red", outline="black")  # 画点
+            draw.ellipse([start_x1, start_y1, start_x2, start_y2], fill=act_color[idx], outline="black")  # 画点
 
             # 在点上标注数字
             text_x = start_x + r  # 标注数字的x位置
@@ -213,7 +188,7 @@ def preview_action(img, table):
             start_y2 = start_y + (2*r)  # 圆形的右下角y坐标
 
             # 绘制点
-            draw.ellipse([start_x1, start_y1, start_x2, start_y2], fill="green", outline="black")  # 画点
+            draw.ellipse([start_x1, start_y1, start_x2, start_y2], fill=act_color[idx], outline="black")  # 画点
 
             # 在点上标注数字
             text_x = start_x + r  # 标注数字的x位置
