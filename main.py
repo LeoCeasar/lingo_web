@@ -84,7 +84,12 @@ def update_table(selected_option, table):
         updated_table = pd.DataFrame([["", "", "", "", selected_option]], columns=["起点x1", "起点y1", "终点x2", "终点y2", "动作"])
     elif lt < 5:
         print(f"{lt}th add")
-        new_row = pd.DataFrame([["", "", "", "", selected_option]], columns=table.columns)
+        # 提取表格最后一行的 '终点x2' 和 '终点y2'
+        last_row = table.iloc[-1]
+        last_end_x2 = last_row["终点x2"]
+        last_end_y2 = last_row["终点y2"]
+
+        new_row = pd.DataFrame([[last_end_x2, last_end_y2, "", "", selected_option]], columns=table.columns)
         updated_table = pd.concat([table, new_row], ignore_index=True)  # 使用pd.concat合并
     return updated_table
 
@@ -124,15 +129,16 @@ def process_file(file):
     task.update_status('npy')
 
     # 将任务信息发送到消息队列
-    task_queue.put(task)
+    # task_queue.put(task)
 
-    return task.task_id, img_path, img_path
+    return task.task_id, img_path, task
 
 # 根据表格内容修改图像的函数
 
 def preview_action(img, table):
     ratio=image_name_to_p2c_ratio_map[img]
     # 确保 img 是一个 PIL 图像对象
+    img = state.image_path
     if isinstance(img, str):
         img = Image.open(img)  # 如果 img 是文件路径，加载图像
     draw = ImageDraw.Draw(img)
@@ -225,34 +231,23 @@ def preview_action(img, table):
     return img
 
 # 用于提交数据，返回视频和结果文件路径
-def submit_task(task_id):
+def submit_task(task, route_df):
     # 这里可以模拟视频生成与处理
     video_path = f"./outputs/{task.task_id}/processed_videos.mp4"
     result_path = f"./outputs/{task.task_id}/processed_results.zip"
-    
-    # 更新任务状态
-    # 根据 task_id 查找或创建任务实例
-    task = None
-    for task_item in task_queue.queue:
-        if task_item.task_id == task_id:
-            task = task_item
-            break
 
-    if not task:
-        # 如果未找到对应的 task，可以返回错误或创建一个新的 Task
-        return "Task not found", None
+    ## process task by lingo model
 
-    task.update_status('completed')  # 更新状态为已完成
     task.video_path = video_path
     task.result_path = result_path
+    task.update_status('completed')  # 更新状态为已完成
     
-    send_to_queue(task)  # 将更新后的任务信息发送到队列
-
-    return video_path, result_path
+    return video_path, video_path, result_path
 
 # 创建Gradio界面
 with gr.Blocks() as demo:
     gr.HTML("<h1 style='text-align:center;'>3D 场景人物动态交互测试</h1>")  # 标题居中
+    state = gr.State()
 
     # 添加自定义CSS来调整下拉框和按钮的高度
     gr.HTML("""
@@ -271,9 +266,9 @@ with gr.Blocks() as demo:
 
         file_input = gr.File(label="上传场景文件")
         img_output = gr.Image(label="场景图像", interactive=False)
-        img_size = gr.HTML(label="图像大小")
-        img_path = gr.Textbox(label="img path")
-        img_path.visible = False
+        # img_size = gr.HTML(label="图像大小")
+        # img_path = gr.Textbox(label="img path")
+        # img_path.visible = False
         
         # 创建表格
         table = gr.DataFrame(df, label="动作规划")
@@ -289,17 +284,18 @@ with gr.Blocks() as demo:
 
         preview_button = gr.Button("预览")
         submit_button = gr.Button("提交")
-        
-        video_output = gr.Textbox(label="视频链接", interactive=False)
-        download_output = gr.Textbox(label="下载链接", interactive=False)
+       
+        video_disply = gr.Video(label="视频播放", visible=False)
+        video_output = gr.Textbox(label="视频链接", interactive=False, visible=False)
+        download_output = gr.Textbox(label="下载链接", interactive=False, visible=False)
 
-        file_input.upload(process_file, inputs=file_input, outputs=[task_id_output, img_output, img_path])
+        file_input.upload(process_file, inputs=file_input, outputs=[task_id_output, img_output, state])
 
         # 按钮事件
         add_button.click(update_table, inputs=[act_dropdown, table], outputs=table)  # 更新表格
-        preview_button.click(preview_action, inputs=[img_path, table], outputs=img_output)  # 点击预览时，根据表格内容生成图像并展示
+        preview_button.click(preview_action, inputs=[state, table], outputs=img_output)  # 点击预览时，根据表格内容生成图像并展示
 
-        # submit_button.click(submit_task, inputs=[file_upload, gr.State()], outputs=[result_display, image_display, image_display])  # 提交时处理任务并显示结果
-        # submit_button.click(submit_task, inputs=task_id_output, outputs=[video_output, download_output])
-        # 设置自定义CSS来调整高度
+        # 提交时处理任务并显示结果
+        submit_button.click(submit_task, inputs=[state, table], outputs=[video_disply, video_output, download_output])
+
 demo.launch()
