@@ -24,7 +24,7 @@ class Task:
         self.image_path = './images/default.jpg'
         self.video_path = None
         self.result_path = None
-
+        self.pixel_to_scene_cordinate_ratio=1
     def update_status(self, status):
         self.status = status
 
@@ -39,7 +39,7 @@ act_ops = ["walk", "run", "pick up", "put down", "lie down"]
 # 创建一个简单的任务队列
 task_queue = queue.Queue()
 is_init = False
-
+image_name_to_p2c_ratio_map={}
 
 # 模拟任务处理的后台线程
 def process_task_queue():
@@ -112,7 +112,9 @@ def process_file(file):
     img_path = f"./{task_output_dir}/processed_images.png"
     NPY_PATH =f"{task_output_dir}/scene_voxelized.npy"
     # 体素化图像
-    voxelized_result=voxelize_obj(task.file_path, output=NPY_PATH)
+    voxelized_result,pixel_to_scene_cordinate_ratio=voxelize_obj(task.file_path, output=NPY_PATH)
+    image_name_to_p2c_ratio_map[img_path]=pixel_to_scene_cordinate_ratio
+    print(img_path)
     show_voxelized_result(voxelized_result, img_path)
     # npy_to_2d_image(NPY_PATH, img_path, projection_type='max')
     
@@ -129,6 +131,7 @@ def process_file(file):
 # 根据表格内容修改图像的函数
 
 def preview_action(img, table):
+    ratio=image_name_to_p2c_ratio_map[img]
     # 确保 img 是一个 PIL 图像对象
     if isinstance(img, str):
         img = Image.open(img)  # 如果 img 是文件路径，加载图像
@@ -143,10 +146,10 @@ def preview_action(img, table):
         font = ImageFont.load_default()
 
     # 确保表格中的坐标列是数字类型，无法转换的会被设置为 NaN，默认值为 0
-    table["起点x1"] = pd.to_numeric(table["起点x1"], errors='coerce').fillna(0)
-    table["起点y1"] = pd.to_numeric(table["起点y1"], errors='coerce').fillna(0)
-    table["终点x2"] = pd.to_numeric(table["终点x2"], errors='coerce').fillna(0)
-    table["终点y2"] = pd.to_numeric(table["终点y2"], errors='coerce').fillna(0)
+    table["起点x1"] = pd.to_numeric(table["起点x1"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
+    table["起点y1"] = pd.to_numeric(table["起点y1"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
+    table["终点x2"] = pd.to_numeric(table["终点x2"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
+    table["终点y2"] = pd.to_numeric(table["终点y2"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
 
     # 获取图像的中心点坐标
     center_x = width / 2
@@ -299,5 +302,4 @@ with gr.Blocks() as demo:
         # submit_button.click(submit_task, inputs=[file_upload, gr.State()], outputs=[result_display, image_display, image_display])  # 提交时处理任务并显示结果
         # submit_button.click(submit_task, inputs=task_id_output, outputs=[video_output, download_output])
         # 设置自定义CSS来调整高度
-
 demo.launch()

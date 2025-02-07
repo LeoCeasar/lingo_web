@@ -60,7 +60,7 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
     voxel_grid = voxel_grid.matrix
     np.save(output, voxel_grid)
     pixel_to_scene_cordinate_ratio=min(400/x,600/y)
-    return voxel_grid
+    return voxel_grid,pixel_to_scene_cordinate_ratio
         
     
 def prep_lingo_job(inference_info:inference_info,output:str="./queue",overwrite:bool=True,submitted_time:datetime=None)->str:
