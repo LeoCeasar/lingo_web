@@ -218,6 +218,7 @@ def submit_task(task, route_df):
     # 将动作序列加载为动画
     pass
     # 将动画渲染并输出为视频
+    print("./vis.blend",f"./outputs/{task.task_id}/processed_videos.mp4")
     render_example_video("./vis.blend",f"./outputs/{task.task_id}/processed_videos.mp4")
     
     task.video_path = video_path
