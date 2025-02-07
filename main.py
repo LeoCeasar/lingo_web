@@ -115,8 +115,8 @@ def process_file(file):
     voxelized_result,pixel_to_scene_cordinate_ratio=voxelize_obj(task.file_path, output=NPY_PATH)
     image_name_to_p2c_ratio_map[img_path]=pixel_to_scene_cordinate_ratio
     print(img_path)
-    show_voxelized_result(voxelized_result, img_path)
-    # npy_to_2d_image(NPY_PATH, img_path, projection_type='max')
+    # show_voxelized_result(voxelized_result, img_path)
+    npy_to_2d_image(NPY_PATH, img_path, projection_type='average')
     
     
     # 更新任务的图片路径
