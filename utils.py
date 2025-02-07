@@ -114,7 +114,7 @@ def pad_voxel_matrix_with_y_padding(original_matrix, target_shape):
 
 class PersistentDict(UserDict):
     def __init__(self, id):
-        self.od = id
+        self.id = id
         # 从文件加载现有数据
         if os.path.exists(f'/cache/{self.id}.pickle'):
             with open(f'/cache/{self.id}.pickle', 'rb') as f:
