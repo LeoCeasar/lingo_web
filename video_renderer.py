@@ -53,6 +53,8 @@ def render_example_video(blend_file_path:str,output:str,device="CUDA"):
 
     # 设置输出路径和帧范围
     scene.render.image_settings.file_format = 'FFMPEG'
+    scene.render.ffmpeg.codec="H264"
+    scene.render.ffmpeg.format="MPEG4"
     scene.render.filepath =output
     scene.frame_start = 1
     scene.frame_end = 250
@@ -63,6 +65,7 @@ def render_example_video(blend_file_path:str,output:str,device="CUDA"):
     
 
 if __name__=="__main__":
+    print("Running rendering from commandline call")
     # 创建 ArgumentParser 对象
     parser = argparse.ArgumentParser(description='running example video rendering in commandline mode')
 
@@ -70,12 +73,14 @@ if __name__=="__main__":
     parser.add_argument('blender_path', help='the path for input blender file')
 
     # 添加位置参数
-    parser.add_argument('output_path', help='the path for output example video(.mkv) file, must end in .mkv')
+    parser.add_argument('output_path', help='the path for output example video file')
     # 添加可选参数
     parser.add_argument('-d', '--device', default='CUDA', help='the acceleration solution to be used, choose from "CUDA", "HIP", "OPTIX"')
 
     # 解析命令行参数
     args = parser.parse_args()
 
-    pprint(args)
+    print(f"blender file path: {args.blender_path}")
+    print(f"output video path: {args.output_path}")
+    print(f"Using: {args.device}")
     render_example_video(args.blender_path,args.output_path,device=args.device)

@@ -39,7 +39,9 @@ act_ops = ["walk", "run", "pick up", "put down", "lie down"]
 act_color = ["red", "orange", "blue", "yellow", "green"]
 
 is_init = False
-image_name_to_p2c_ratio_map={}
+image_name_to_p2c_ratio_map={} # 用来装载每张npy可视化图片的像素坐标对应场景的实际坐标之比
+components_visible=[] # 装载在结果生成完毕后需要切换可见性的组件
+
 
 # 初始空表格，有5列，初始化时包含一条数据行
 df = pd.DataFrame(columns=["起点x1", "起点y1", "终点x2", "终点y2", "动作"])
@@ -217,12 +219,15 @@ def submit_task(task, route_df):
     # 将动作序列加载为动画
     pass
     # 将动画渲染并输出为视频
-    render_video_in_subprocess("C:\lingo_web\\vis.blend",f"C:\lingo_web\\outputs\\{task.task_id}\\processed_videos.mkv")
+    render_video_in_subprocess("C:\lingo_web\\vis.blend",f"C:\lingo_web\\outputs\\{task.task_id}\\processed_videos.mp4")
+    for each_component in components_visible:
+        print(each_component)
+        each_component.visible=True
     task.video_path = video_path
     task.result_path = result_path
     task.update_status('completed')  # 更新状态为已完成
-    
-    return video_path, video_path, result_path
+
+    return video_path,video_path,result_path,gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)
 
 # 创建Gradio界面
 with gr.Blocks() as demo:
@@ -265,10 +270,12 @@ with gr.Blocks() as demo:
         preview_button = gr.Button("预览")
         submit_button = gr.Button("提交")
        
-        video_disply = gr.Video(label="视频播放", visible=False)
+        video_display = gr.Video(label="视频播放", visible=False)
         video_output = gr.Textbox(label="视频链接", interactive=False, visible=False)
         download_output = gr.Textbox(label="下载链接", interactive=False, visible=False)
-
+        components_visible.append(video_display)
+        components_visible.append(video_output)
+        components_visible.append(download_output)
         file_input.upload(process_file, inputs=file_input, outputs=[task_id_output, img_output, state])
 
         # 按钮事件
@@ -276,6 +283,6 @@ with gr.Blocks() as demo:
         preview_button.click(preview_action, inputs=[state, table], outputs=img_output)  # 点击预览时，根据表格内容生成图像并展示
 
         # 提交时处理任务并显示结果
-        submit_button.click(submit_task, inputs=[state, table], outputs=[video_disply, video_output, download_output])
+        submit_button.click(submit_task, inputs=[state, table], outputs=[video_display, video_output, download_output,video_display, video_output, download_output])
 
 demo.launch()
