@@ -1,6 +1,9 @@
-import bpy
-import os
 
+import os
+from pprint import pprint
+import bpy
+import sys
+import argparse
 def render_example_video(blend_file_path:str,output:str,device="CUDA"):
     """从一个blender文件（.blend）渲染一段俯瞰视角的示例视频
 
@@ -11,12 +14,12 @@ def render_example_video(blend_file_path:str,output:str,device="CUDA"):
     """
     
     assert os.path.exists(blend_file_path)
-
     assert device in ['CUDA', 'HIP', 'OPTIX']
     # 打开.blend文件
     # blend_file_path = "vis.blend"
+    print(blend_file_path)
     bpy.ops.wm.open_mainfile(filepath=blend_file_path)
-
+    print("blender file opened")
     # 设置渲染引擎为 Cycles
     bpy.data.scenes[0].render.engine = "CYCLES"
 
@@ -54,7 +57,24 @@ def render_example_video(blend_file_path:str,output:str,device="CUDA"):
     scene.frame_end = 250
 
     # 开始渲染
+    print("开始渲染")
     bpy.ops.render.render(animation=True)
+    
 
 if __name__=="__main__":
-    render_example_video("C:\lingo_web\\vis.blend","D:\example_output.mkv")
+    # 创建 ArgumentParser 对象
+    parser = argparse.ArgumentParser(description='running example video rendering in commandline mode')
+
+    # 添加位置参数
+    parser.add_argument('blender_path', help='the path for input blender file')
+
+    # 添加位置参数
+    parser.add_argument('output_path', help='the path for output example video(.mkv) file, must end in .mkv')
+    # 添加可选参数
+    parser.add_argument('-d', '--device', default='CUDA', help='the acceleration solution to be used, choose from "CUDA", "HIP", "OPTIX"')
+
+    # 解析命令行参数
+    args = parser.parse_args()
+
+    pprint(args)
+    render_example_video(args.blender_path,args.output_path,device=args.device)

@@ -12,6 +12,8 @@ import os
 import pickle
 from interfaces import *
 from collections import UserDict
+import subprocess
+
 ##############################################################
 #               以下为工具函数/类（并非接口）                   #
 ##############################################################
@@ -139,3 +141,12 @@ class PersistentDict(UserDict):
         self.save()
 
 
+def render_video_in_subprocess(blender_path:str,output:str,device:str="CUDA"):
+    """gradio与bpy并发执行时会崩溃，因此需要在子进程中隔离运行渲染视频的代码。代码运行时父进程（gradio）会等待子进程（bpy）结束
+
+    参数:
+        blender_path (str): .blend文件的路径，在Windows上请使用绝对路径
+        output (str): 输出文件的路径，视频输出格式为mkv，因此命名时请以对应扩展名结尾
+        device (str,optional): 渲染使用的加速技术，可以从“CUDA”，“HIP”，“OPTIX”中选择，默认为CUDA
+    """
+    subprocess.run(["python", "video_renderer.py",blender_path,output,f"-d{device}"])

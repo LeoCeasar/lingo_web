@@ -12,8 +12,7 @@ from datetime import datetime
 import pandas as pd
 from interfaces import *
 from npy_to_2d_image import *
-from video_renderer import *
-
+from utils import *
 # 定义任务类
 class Task:
     def __init__(self, file_path):
@@ -218,9 +217,7 @@ def submit_task(task, route_df):
     # 将动作序列加载为动画
     pass
     # 将动画渲染并输出为视频
-    print("./vis.blend",f"./outputs/{task.task_id}/processed_videos.mp4")
-    render_example_video("./vis.blend",f"./outputs/{task.task_id}/processed_videos.mp4")
-    
+    render_video_in_subprocess("C:\lingo_web\\vis.blend",f"C:\lingo_web\\outputs\\{task.task_id}\\processed_videos.mkv")
     task.video_path = video_path
     task.result_path = result_path
     task.update_status('completed')  # 更新状态为已完成
