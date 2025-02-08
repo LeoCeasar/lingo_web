@@ -221,7 +221,6 @@ def submit_task(task, route_df):
     # 将动画渲染并输出为视频
     render_video_in_subprocess("C:\lingo_web\\vis.blend",f"C:\lingo_web\\outputs\\{task.task_id}\\processed_videos.mp4")
     for each_component in components_visible:
-        print(each_component)
         each_component.visible=True
     task.video_path = video_path
     task.result_path = result_path

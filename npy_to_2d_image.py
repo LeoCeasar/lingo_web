@@ -33,7 +33,7 @@ def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max'
         projected_data = np.max(voxel_data, axis=1).astype(np.uint8)
     elif projection_type == 'average':
         # 使用平均值投影，布尔类型平均值是True的概率
-        projected_data = (255-log_mapping(np.mean(voxel_data, axis=1)*255,base=3)).astype(np.uint8)
+        projected_data = (255-log_mapping(np.mean(voxel_data, axis=1)*255,base=3)).astype(np.uint8).T
     else:
         raise ValueError("投影方式不支持，仅支持 'max' 或 'average'")
 
