@@ -6,6 +6,7 @@ import sys
 import argparse
 def render_example_video(blend_file_path:str,output:str,device="CUDA"):
     """从一个blender文件（.blend）渲染一段俯瞰视角的示例视频
+        !!!重要提示：避免在gradio的上下文内直接调用该代码，否则将导致gradio应用崩溃!!!
 
     Args:
         blend_file_path (str): blender文件的路径（Windows上运行时请使用绝对路径）
