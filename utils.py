@@ -13,63 +13,31 @@ import pickle
 from interfaces import *
 from collections import UserDict
 import subprocess
-
+import bpy
+import uuid
+from os.path import isdir,isfile,join as path_join,exists as path_exists
 ##############################################################
 #               以下为工具函数/类（并非接口）                   #
 ##############################################################
+class Task:
+    def __init__(self, obj_path):
+        self.timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.task_id = str(self.generate_uuid_with_timestamp())  # 生成唯一任务ID
+        self.status = 'init'  # 初始任务状态为待处理
+        self.output_dir=None
+        self.obj_path = obj_path
+        self.image_path = './images/default.jpg'
+        self.video_path = None
+        self.result_path = None
+        self.npy_path = None
+        self.data = None
+    def update_status(self, status):
+        self.status = status
 
-class inference_info:
-    ###
-    # 用来装载准备时推理所需的数据，配有一个格式验证器
-    ###
-    start_locations:List
-    end_locations:List
-    actions:List
-    scene_path:str
-    scene_name:str
-    submitted_time:datetime
-    _is_submitted=False # 标记数据是否已经进入过队列
-    def is_valid(self)->bool:
-        msg=""
-        if (self.start_locations and self.end_locations and self.actions):
-            if not (len(self.start_locations)==len(self.end_locations)==len(self.actions)):
-                msg+=f"The length of start_locations, end_locations and actions should be equal, but the input being({len(self.start_locations)},{len(self.end_locations)},{len(self.actions)})\n"
-        else:
-            msg+="Following information is missing: "
-            if not self.start_locations:
-                msg+="start_locations, "
-            if not self.end_locations:
-                msg+="end_locations, "
-            if not self.actions:
-                msg+="actions, "
-            msg=msg[:-1]+".\n"
-        if not os.path.exists(self.scene_path):# 如果场景路径不存在
-            msg+=f"scene_path is provided as {self.scene_path} yet do not exist.\n"
-        else:
-            if os.path.isdir(self.scene_path):# 如果路径存在但是个目录
-                msg+=f"scene_path expects a file but {self.scene_path} points to a directory."
-            elif os.path.basename(self.scene_path)!=self.scene_name:# 如果路径存在，不是目录（是文件），检查路径和记录的场景名是否一致
-                msg+="Inconsistent scene_path and scene_name detected: the path is {self.scene_path} yet the name is {self.scene_name}.\n"
-        if (self._is_submitted and not self.submitted_time) or (not self._is_submitted and self.submitted_time): # 如果标记为已经上传却没有上传时间，或标记为还未上传却有上传时间
-            msg+="Inconsistent submit marker and submitted time detected: the marker is {self._is_submitted} yet the submitted time is {self.submitted_time}\n"
-        if len(msg)==0:
-            return True
-        else:
-            print(msg)
-            return False
-
-    def set_scene_path(self,path:str)->None:
-        #设置scene_path并根据path更新scene_name
-        #该方法继承basename的行为，并不检查路径的有效性
-        self.scene_path=path
-        self.scene_name=os.path.basename(path)
-
-    def __set_submitted_time__(self,overwrite=False)->None:
-        if not self._is_submitted or overwrite:
-            self._is_submitted=True
-            self.submitted_time=datetime.now()
-        else:
-            warnings(f"Operation aborted, as the submitted status is configured as {self._is_submitted} and submitted time being {self.submitted_time}.")      
+    def generate_uuid_with_timestamp(self):
+        # 使用时间戳和随机数生成UUID
+        return uuid.uuid5(uuid.NAMESPACE_DNS, f"{self.timestamp}-{uuid.uuid4()}")    
+    
 
 def fill_voxel_matrix(original_matrix):
     """
@@ -150,3 +118,20 @@ def render_video_in_subprocess(blender_path:str,output:str,device:str="CUDA"):
         device (str,optional): 渲染使用的加速技术，可以从“CUDA”，“HIP”，“OPTIX”中选择，默认为CUDA
     """
     subprocess.run(["python", "video_renderer.py",blender_path,output,f"-d{device}"])
+
+def run_blender_code(script_name:str,addon_path:str="./asset/smplx_blender_addon_lh_20241129.zip",blend_path:str="./vis.blend"):
+    """ 用以解决blender内部的python代码难以从外部运行的问题。该函数从.blend文件内部提取出代码块，并在当前环境下运行。
+        以此法执行的代码依然相当于运行在blender外部，因此部分仅从blender内部才能访问的资源并不可用。
+    Args:
+        script_name (str): .blend文件内部的脚本名称，例如get_input，vis_output
+        addon_path (str, optional): 需要安装的扩展. Defaults to "./asset/smplx_blender_addon_lh_20241129.zip".
+        blend_path (str, optional): _description_. Defaults to "./vis.blend".
+    """
+    bpy.ops.preferences.addon_install(filepath = addon_path)
+    bpy.ops.wm.open_mainfile(filepath=blend_path)
+
+    text = bpy.data.texts.get(script_name)
+    if text:
+        exec(text.as_string())
+        bpy.ops.wm.save_mainfile(filepath=blend_path)
+    return

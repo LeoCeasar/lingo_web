@@ -1,5 +1,5 @@
 import gradio as gr
-import uuid
+
 import os
 import queue
 import threading
@@ -14,22 +14,7 @@ from interfaces import *
 from npy_to_2d_image import *
 from utils import *
 # 定义任务类
-class Task:
-    def __init__(self, file_path):
-        self.timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        self.task_id = str(self.generate_uuid_with_timestamp())  # 生成唯一任务ID
-        self.status = 'init'  # 初始任务状态为待处理
-        self.file_path = file_path
-        self.image_path = './images/default.jpg'
-        self.video_path = None
-        self.result_path = None
-        self.pixel_to_scene_cordinate_ratio=1
-    def update_status(self, status):
-        self.status = status
 
-    def generate_uuid_with_timestamp(self):
-        # 使用时间戳和随机数生成UUID
-        return uuid.uuid5(uuid.NAMESPACE_DNS, f"{self.timestamp}-{uuid.uuid4()}")
 
 
 # 动作可选项
@@ -72,24 +57,25 @@ def process_file(file):
     print(f"processing {file.name}")
 
     # 创建输出目录
-    task_output_dir = f"./outputs/{task.task_id}"
-    os.makedirs(task_output_dir, exist_ok=True)
+    task.output_dir = f"./outputs/{task.task_id}"
+    os.makedirs(task.output_dir, exist_ok=True)
     global is_init
     is_init = False
 
     # 文件转存：复制上传的文件到目标目录
-    task.file_path = os.path.join(task_output_dir, os.path.basename(file.name))
+    task.obj_path = os.path.join(task.output_dir, os.path.basename(file.name))
 
-    shutil.copy(file.name, task.file_path)
+    shutil.copy(file.name, task.obj_path)
 
-    print(f"task file path uploaded: {task.file_path}")
+    print(f"task file path uploaded: {task.obj_path}")
     task.update_status('uploaded')  # 更新任务状态为上传成功
 
     # 保存图像路径
-    img_path = f"./{task_output_dir}/processed_images.png"
-    NPY_PATH =f"{task_output_dir}/scene_voxelized.npy"
+    img_path = f"./{task.output_dir}/processed_images.png"
+    NPY_PATH =f"{task.output_dir}/scene_voxelized.npy"
+    task.npy_path=NPY_PATH
     # 体素化图像
-    voxelized_result,pixel_to_scene_cordinate_ratio=voxelize_obj(task.file_path, output=NPY_PATH)
+    voxelized_result,pixel_to_scene_cordinate_ratio=voxelize_obj(task.obj_path, output=NPY_PATH)
     image_name_to_p2c_ratio_map[img_path]=pixel_to_scene_cordinate_ratio
     print(img_path)
     # show_voxelized_result(voxelized_result, img_path)
@@ -107,7 +93,7 @@ def process_file(file):
 
 # 根据表格内容修改图像的函数
 
-def preview_action(task, table):
+def preview_action(task, table:pd.DataFrame):
     # 确保 img 是一个 PIL 图像对象
     global act_color
     img = task.image_path
@@ -125,19 +111,20 @@ def preview_action(task, table):
         font = ImageFont.truetype("arial.ttf", 15)
     except IOError:
         font = ImageFont.load_default()
-
+    task.data=table
     # 确保表格中的坐标列是数字类型，无法转换的会被设置为 NaN，默认值为 0
-    table["起点x1"] = pd.to_numeric(table["起点x1"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
-    table["起点y1"] = pd.to_numeric(table["起点y1"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
-    table["终点x2"] = pd.to_numeric(table["终点x2"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
-    table["终点y2"] = pd.to_numeric(table["终点y2"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
+    table_scaled=table.copy()
+    table_scaled["起点x1"] = pd.to_numeric(table["起点x1"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
+    table_scaled["起点y1"] = pd.to_numeric(table["起点y1"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
+    table_scaled["终点x2"] = pd.to_numeric(table["终点x2"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
+    table_scaled["终点y2"] = pd.to_numeric(table["终点y2"], errors='coerce').fillna(0).astype("float").multiply(ratio).astype("int")
 
     # 获取图像的中心点坐标
     center_x = width / 2
     center_y = height / 2
 
     # 遍历表格中的数据，绘制点并标注数字
-    for idx, row in table.iterrows():
+    for idx, row in table_scaled.iterrows():
         try:
             # 获取表格中的坐标
             x1_center = row["起点x1"]
