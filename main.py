@@ -1,5 +1,5 @@
 import gradio as gr
-
+import zipfile
 import os
 import queue
 import threading
@@ -207,8 +207,11 @@ def submit_task(task, route_df):
     pass
     # 将动画渲染并输出为视频
     render_video_in_subprocess("C:\lingo_web\\vis.blend",f"C:\lingo_web\\outputs\\{task.task_id}\\processed_videos.mp4")
+    result_path=zip_folder_files(task.output_dir)
+
     for each_component in components_visible:
         each_component.visible=True
+        print(each_component)
     task.video_path = video_path
     task.result_path = result_path
     task.update_status('completed')  # 更新状态为已完成
@@ -256,9 +259,9 @@ with gr.Blocks() as demo:
         preview_button = gr.Button("预览")
         submit_button = gr.Button("提交")
        
-        video_display = gr.Video(label="视频播放", visible=False)
-        video_output = gr.Textbox(label="视频链接", interactive=False, visible=False)
-        download_output = gr.Textbox(label="下载链接", interactive=False, visible=False)
+        video_display = gr.Video(label="视频播放")
+        video_output = gr.Textbox(label="视频链接", interactive=False)
+        download_output = gr.Textbox(label="下载链接", interactive=False)
         components_visible.append(video_display)
         components_visible.append(video_output)
         components_visible.append(download_output)

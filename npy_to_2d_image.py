@@ -43,14 +43,14 @@ def npy_to_2d_image(npy_file: str, output_image_path: str, projection_type='max'
     # projected_data = (projected_data - np.min(projected_data)) / (np.max(projected_data) - np.min(projected_data)) * 255
     # projected_data = projected_data.astype(np.uint8)
 
-
+    rgb_image = np.stack((projected_data,) * 3, axis=-1)
     # 使用PIL保存为图像
-    image = Image.fromarray(projected_data)
+    image = Image.fromarray(rgb_image)
     image.save(output_image_path)
     print(f"转换完成，图像保存至 {output_image_path}")
     if show_img:
     # 显示图像
-        plt.imshow(projected_data, cmap='gray')
+        plt.imshow(rgb_image, cmap='gray')
         plt.axis('off')  # 不显示坐标轴
         plt.show()
 

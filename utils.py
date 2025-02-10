@@ -19,7 +19,8 @@ from os.path import isdir,isfile,join as path_join,exists as path_exists
 import numpy as np
 import os
 import pandas as pd
-
+import zipfile
+import shutil
 def fill_voxel_matrix(original_matrix):
     """
     将体素矩阵的内部区域填充为 True。
@@ -75,6 +76,7 @@ def render_video_in_subprocess(blender_path:str,output:str,device:str="CUDA"):
         device (str,optional): 渲染使用的加速技术，可以从“CUDA”，“HIP”，“OPTIX”中选择，默认为CUDA
     """
     subprocess.run(["python", "video_renderer.py",blender_path,output,f"-d{device}"])
+    print("Subprocess exited, returning to main process.")
 
 # def run_blender_code(script_name:str,addon_path:str="./asset/smplx_blender_addon_lh_20241129.zip",blend_path:str="./vis.blend"):
 def run_blender_code(script_name:str,blend_path:str="./vis.blend",params:dict={}):
@@ -188,3 +190,23 @@ def open_blend_and_import_obj(blend_file_path:str, obj_file_path:str):
         bpy.ops.wm.save_mainfile(filepath=blend_file_path)
     except Exception as e:
         print(f"操作过程中出现错误: {e}")
+        
+def zip_folder_files(folder_path):
+    # 获取文件夹的基本名称，用于生成 ZIP 文件的名称
+    folder_name = os.path.basename(folder_path)
+    # 生成 ZIP 文件的完整路径，ZIP 文件名为文件夹名加上 .zip 后缀
+    zip_file_path = os.path.join(folder_path, f'{folder_name}.zip')
+    # 以写入模式创建一个 ZIP 文件对象，使用 ZIP_DEFLATED 压缩算法
+    os.makedirs("temp",exist_ok=True)
+    with zipfile.ZipFile(f"./temp/{folder_name}.zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
+        # 遍历文件夹下的所有文件
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            # 只处理文件，不处理文件夹
+            if os.path.isfile(file_path):
+                print(f"Zipping {file_path}")
+                    # 将文件添加到 ZIP 文件中，同时使用文件名作为 ZIP 内的相对路径
+                zipf.write(file_path, filename)
+    shutil.move(f"./temp/{folder_name}.zip",zip_file_path)
+    print(f"已将 {folder_path} 下的所有文件打包为 {zip_file_path}")
+    return zip_file_path

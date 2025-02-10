@@ -84,3 +84,4 @@ if __name__=="__main__":
     print(f"output video path: {args.output_path}")
     print(f"Using: {args.device}")
     render_example_video(args.blender_path,args.output_path,device=args.device)
+    print("Completed")
