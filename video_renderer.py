@@ -67,7 +67,7 @@ def render_example_video(blend_file_path:str,output:str,device="CUDA"):
 if __name__=="__main__":
     print("Running rendering from commandline call")
     # 创建 ArgumentParser 对象
-    parser = argparse.ArgumentParser(description='running example video rendering in commandline mode')
+    parser = argparse.ArgumentParser(description='rendering example video in commandline mode')
 
     # 添加位置参数
     parser.add_argument('blender_path', help='the path for input blender file')

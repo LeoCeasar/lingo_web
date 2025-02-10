@@ -11,7 +11,7 @@ from datetime import datetime
 import os
 import pickle as pkl
 from interfaces import *
-
+from pathlib import Path
 import subprocess
 import bpy
 import uuid
@@ -95,6 +95,27 @@ def run_blender_code(script_name:str,blend_path:str="./vis.blend",params:dict={}
         bpy.ops.wm.save_mainfile(filepath=blend_path)
     return
 
+def run_lingo_code_in_subprocess(input_path:str,output_path:str):
+    """ 调用子进程运行Lingo模型的推理过程，以解决gradio和Lingo模型推理可能存在的兼容性问题，以及gradio并发执行时可能带来的异步错误问题
+        此处配置的输入会被传入子进程并配置为环境变量。不同进程之间的环境变量不会互相影响，因此不应带来异步错误
+        (需在hydra配置文件中将相应栏目替换成对环境变量的引用，其他可维持不变)
+    Args:
+        input_path (str): 输入目录路径；若为相对路径则会转换为绝对路径，确保执行过程安全
+        output_path (str): 输出目录路径；若为相对路径则会转换为绝对路径，确保执行过程安全
+    """
+    input_Path=Path(input_path)
+    output_Path=Path(output_path)
+    input_path_resolved=input_Path.resolve()
+    output_path_resolved=output_Path.resolve()
+    # 获取当前工作目录
+    current_directory = os.getcwd()
+    print("当前工作文件夹是:", current_directory)
+    os.chdir(".\lingo_model\code")
+    print("切换至:", os.getcwd())
+    subprocess.run(["python", "sample_lingo.py",input_path_resolved,output_path_resolved])
+        
+    os.chdir(current_directory)
+    print(f"工作完毕，切换回：{current_directory}")
 
 
 def zip_input_into_pickle(task:Task):
