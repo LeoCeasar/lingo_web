@@ -142,3 +142,49 @@ def zip_input_into_pickle(task:Task):
         
     with open(os.path.join(task.output_dir, f'{scene_name}.pkl'), 'wb') as f:
         pkl.dump(data, f)
+
+
+def open_blend_and_import_obj(blend_file_path:str, obj_file_path:str):
+    """向一个空白的vis.blend模板内导入场景文件，用于可视化。场景文件应该分别在X,Y轴上居中
+
+    参数:
+        blend_file_path (str): blend模板文件的路径
+        obj_file_path (str): obj模型文件的路径
+    """    
+    try:
+        # 打开 .blend 文件
+        bpy.ops.wm.open_mainfile(filepath=blend_file_path)
+        print(f"成功打开 .blend 文件: {blend_file_path}")
+
+        # 导入 .obj 模型
+        bpy.ops.wm.obj_import(filepath=obj_file_path)
+        print(f"成功导入 .obj 模型: {obj_file_path}")
+
+        # 获取刚导入的模型对象（假设导入后活动对象就是该模型）
+        model = bpy.context.active_object
+
+        # 计算模型的边界框中心
+        min_x = min([vertex[0] for vertex in model.bound_box])
+        max_x = max([vertex[0] for vertex in model.bound_box])
+        min_y = min([vertex[1] for vertex in model.bound_box])
+        max_y = max([vertex[1] for vertex in model.bound_box])
+
+        model_center_x = (min_x + max_x) / 2
+        model_center_y = (min_y + max_y) / 2
+
+        # 计算场景中心（假设场景中心为原点 (0, 0, 0)）
+        scene_center_x = 0
+        scene_center_y = 0
+
+        # 计算模型需要移动的偏移量
+        offset_x = scene_center_x - model_center_x
+        offset_y = scene_center_y - model_center_y
+
+        # 移动模型到场景中心
+        model.location.x += offset_x
+        model.location.y += offset_y
+
+        print("模型已在 X 和 Y 轴上居中。")
+        bpy.ops.wm.save_mainfile(filepath=blend_file_path)
+    except Exception as e:
+        print(f"操作过程中出现错误: {e}")
