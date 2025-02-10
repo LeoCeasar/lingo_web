@@ -98,16 +98,20 @@ def run_blender_code(script_name:str,blend_path:str="./vis.blend",params:dict={}
 
 
 def zip_input_into_pickle(task:Task):
+    """将task内的data打包成为模型可识别的输入
+
+    参数:
+        task (Task): 需要打包的task对象
+    """    
     scene_name = 'demo-21'
     data = []
     ep_num=10
-    for each_row in task.data.iterrows:
-        each_row["起点x1"],1.0,each_row["起点y1"]
+    for _,each_row in task.data.iterrows():
         data.append({'scene_name': scene_name, 
                     'text': each_row["动作"],
-                    'start_location': np.array(each_row["起点x1"],1.0,each_row["起点y1"]),
-                    'end_location':  np.array(each_row["终点x2"],1.0,each_row["终点y2"]),
-                    'hand_location':  np.array(each_row["终点x2"],1.0,each_row["终点y2"]),
+                    'start_location': np.array([each_row["起点x1"],1.0,each_row["起点y1"]]),
+                    'end_location':  np.array([each_row["终点x2"],1.0,each_row["终点y2"]]),
+                    'hand_location':  np.array([each_row["终点x2"],1.0,each_row["终点y2"]]),
                     'episode_num': ep_num
                     })
         ep_num+=10
