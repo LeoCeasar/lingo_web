@@ -66,9 +66,9 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
     return voxel_grid,pixel_to_scene_cordinate_ratio
         
     
-def prep_lingo_job(task:Task)->str:
-    run_blender_code("get_input",blend_path="./lingo_model/vis.blend")
-
+def prep_lingo_job(task:Task):
+    zip_input_into_pickle(task)
+    copy2(task.npy_path, f"./lingo_model/dataset/Scene_vis/{task.task_id}.npy")
 
 def show_voxelized_result(ndarray:np.ndarray,path:str):
     processed_arr_summary=-np.sum(ndarray[:,:70,:],axis=1)
@@ -77,3 +77,4 @@ def show_voxelized_result(ndarray:np.ndarray,path:str):
     plt.rcParams['figure.autolayout'] = True
     plt.axis('off')
     plt.savefig(path,bbox_inches='tight', pad_inches=0)
+    

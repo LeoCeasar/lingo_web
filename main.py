@@ -72,7 +72,7 @@ def process_file(file):
 
     # 保存图像路径
     img_path = f"./{task.output_dir}/processed_images.png"
-    NPY_PATH =f"{task.output_dir}/scene_voxelized.npy"
+    NPY_PATH =f"{task.output_dir}/{task.task_id}.npy"
     task.npy_path=NPY_PATH
     # 体素化图像
     voxelized_result,pixel_to_scene_cordinate_ratio=voxelize_obj(task.obj_path, output=NPY_PATH)
