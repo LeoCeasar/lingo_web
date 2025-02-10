@@ -1,7 +1,7 @@
 ###
 #  用来放一些非展示界面的代码
 ###
-
+from classes import *
 from typing import List
 import numpy as np
 from scipy.ndimage import binary_fill_holes
@@ -9,35 +9,16 @@ import warnings
 from  trimesh.voxel.creation import voxelize
 from datetime import datetime
 import os
-import pickle
+import pickle as pkl
 from interfaces import *
-from collections import UserDict
+
 import subprocess
 import bpy
 import uuid
 from os.path import isdir,isfile,join as path_join,exists as path_exists
-##############################################################
-#               以下为工具函数/类（并非接口）                   #
-##############################################################
-class Task:
-    def __init__(self, obj_path):
-        self.timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        self.task_id = str(self.generate_uuid_with_timestamp())  # 生成唯一任务ID
-        self.status = 'init'  # 初始任务状态为待处理
-        self.output_dir=None
-        self.obj_path = obj_path
-        self.image_path = './images/default.jpg'
-        self.video_path = None
-        self.result_path = None
-        self.npy_path = None
-        self.data = None
-    def update_status(self, status):
-        self.status = status
-
-    def generate_uuid_with_timestamp(self):
-        # 使用时间戳和随机数生成UUID
-        return uuid.uuid5(uuid.NAMESPACE_DNS, f"{self.timestamp}-{uuid.uuid4()}")    
-    
+import numpy as np
+import os
+import pandas as pd
 
 def fill_voxel_matrix(original_matrix):
     """
@@ -82,31 +63,7 @@ def pad_voxel_matrix_with_y_padding(original_matrix, target_shape):
 
     return padded_matrix
 
-class PersistentDict(UserDict):
-    def __init__(self, id):
-        self.id = id
-        # 从文件加载现有数据
-        if os.path.exists(f'/cache/{self.id}.pickle'):
-            with open(f'/cache/{self.id}.pickle', 'rb') as f:
-                self.data = pickle.load(f)
-        else:
-            self.data = {}
 
-    def save(self):
-        # 将数据保存到文件
-        try:
-            with open(f'{self.id}.pickle', 'r') as f:
-                return pickle.load(f)
-        except FileNotFoundError:
-            return None
-
-    def __setitem__(self, key, value):
-        super().__setitem__(key, value)
-        self.save()  # 每次修改后自动保存
-
-    def __delitem__(self, key):
-        super().__delitem__(key)
-        self.save()
 
 
 def render_video_in_subprocess(blender_path:str,output:str,device:str="CUDA"):
@@ -119,15 +76,17 @@ def render_video_in_subprocess(blender_path:str,output:str,device:str="CUDA"):
     """
     subprocess.run(["python", "video_renderer.py",blender_path,output,f"-d{device}"])
 
-def run_blender_code(script_name:str,addon_path:str="./asset/smplx_blender_addon_lh_20241129.zip",blend_path:str="./vis.blend"):
+# def run_blender_code(script_name:str,addon_path:str="./asset/smplx_blender_addon_lh_20241129.zip",blend_path:str="./vis.blend"):
+def run_blender_code(script_name:str,blend_path:str="./vis.blend",params:dict={}):
     """ 用以解决blender内部的python代码难以从外部运行的问题。该函数从.blend文件内部提取出代码块，并在当前环境下运行。
         以此法执行的代码依然相当于运行在blender外部，因此部分仅从blender内部才能访问的资源并不可用。
-    Args:
+    参数:
         script_name (str): .blend文件内部的脚本名称，例如get_input，vis_output
         addon_path (str, optional): 需要安装的扩展. Defaults to "./asset/smplx_blender_addon_lh_20241129.zip".
-        blend_path (str, optional): _description_. Defaults to "./vis.blend".
+        blend_path (str, optional): vis.blend的路径 Defaults to "./vis.blend".
+        params (str, optional): 脚本参数，本质上是用于替换代码模板中占位符的字典，用法和python原生的模板-字符串类似. Defaults to {}.
     """
-    bpy.ops.preferences.addon_install(filepath = addon_path)
+    # bpy.ops.preferences.addon_install(filepath = addon_path)
     bpy.ops.wm.open_mainfile(filepath=blend_path)
 
     text = bpy.data.texts.get(script_name)
@@ -135,3 +94,26 @@ def run_blender_code(script_name:str,addon_path:str="./asset/smplx_blender_addon
         exec(text.as_string())
         bpy.ops.wm.save_mainfile(filepath=blend_path)
     return
+
+
+
+def zip_input_into_pickle(task:Task):
+    scene_name = 'demo-21'
+    data = []
+    ep_num=10
+    for each_row in task.data.iterrows:
+        each_row["起点x1"],1.0,each_row["起点y1"]
+        data.append({'scene_name': scene_name, 
+                    'text': each_row["动作"],
+                    'start_location': np.array(each_row["起点x1"],1.0,each_row["起点y1"]),
+                    'end_location':  np.array(each_row["终点x2"],1.0,each_row["终点y2"]),
+                    'hand_location':  np.array(each_row["终点x2"],1.0,each_row["终点y2"]),
+                    'episode_num': ep_num
+                    })
+        ep_num+=10
+    seg_num = len(data)
+    for seg in data:
+        seg['seg_num'] = seg_num
+        
+    with open(os.path.join(task.output_dir, f'{scene_name}.pkl'), 'wb') as f:
+        pkl.dump(data, f)

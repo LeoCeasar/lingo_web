@@ -3,6 +3,7 @@ import numpy as np
 import trimesh
 from  trimesh.voxel.creation import voxelize
 from datetime import datetime
+from classes import *
 from utils import *
 import json
 import os
@@ -66,7 +67,7 @@ def voxelize_obj(path:str,output:str="./cache/default.npy")->np.ndarray:
         
     
 def prep_lingo_job(task:Task)->str:
-    pass
+    run_blender_code("get_input",blend_path="./lingo_model/vis.blend")
 
 
 def show_voxelized_result(ndarray:np.ndarray,path:str):
