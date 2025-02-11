@@ -72,7 +72,7 @@ def render_video_in_subprocess(blender_path:str,output:str,device:str="CUDA"):
 
     参数:
         blender_path (str): .blend文件的路径，在Windows上请使用绝对路径
-        output (str): 输出文件的路径，视频输出格式为mkv，因此命名时请以对应扩展名结尾
+        output (str): 输出文件的路径，Gradio接受的视频格式为.mp4，因此命名时请以对应扩展名结尾
         device (str,optional): 渲染使用的加速技术，可以从“CUDA”，“HIP”，“OPTIX”中选择，默认为CUDA
     """
     subprocess.run(["python", "video_renderer.py",blender_path,output,f"-d{device}"])
@@ -113,7 +113,7 @@ def run_lingo_code_in_subprocess(input_path:str,output_path:str,npy_name:str):
     # 获取当前工作目录
     current_directory = os.getcwd()
     print("当前工作文件夹是:", current_directory)
-    os.chdir(".\lingo_model\code")
+    os.chdir("./lingo_model/code")
     print("切换至:", os.getcwd())
     subprocess.run(["python", "sample_lingo.py",input_path_resolved,output_path_resolved,npy_name])
         

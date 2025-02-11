@@ -70,7 +70,7 @@ def render_example_video(blend_file_path:str,output:str,device="CUDA"):
     scene.cycles.use_denoising = True  # 启用降噪
 
     # 降低分辨率
-    scene.render.resolution_percentage = 50  # 渲染分辨率降低到 50%
+    scene.render.resolution_percentage = 80  # 降低渲染分辨率
 
     # 启用简化模式
     scene.render.use_simplify = True
@@ -95,11 +95,6 @@ def render_example_video(blend_file_path:str,output:str,device="CUDA"):
     scene.render.ffmpeg.codec="H264"
     scene.render.ffmpeg.format="MPEG4"
     scene.render.filepath =output
-    """
-    #改为自动检测动画帧
-    scene.frame_start = 1
-    scene.frame_end = 250
-    """
 
     # 开始渲染
     print("开始渲染")

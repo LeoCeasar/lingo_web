@@ -16,6 +16,7 @@ class Task:
         self.result_path = None
         self.npy_path = None
         self.data:pd.DataFrame = None
+        self.blend_path=None
     def update_status(self, status):
         self.status = status
 

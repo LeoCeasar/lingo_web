@@ -58,6 +58,8 @@ def process_file(file):
 
     # 创建输出目录
     task.output_dir = f"./outputs/{task.task_id}"
+    task.blend_path = task.output_dir+"/vis.blend"
+    shutil.copy2("./assets/vis.blend", task.blend_path)
     os.makedirs(task.output_dir, exist_ok=True)
     global is_init
     is_init = False
@@ -201,12 +203,13 @@ def submit_task(task, route_df):
     ## process task by lingo model
 
 
-    # 将模型输出导入到vis.blend内
-    pass
-    # 将动作序列加载为动画
-    pass
+    # 将模型输出封包为pkl文件
+    zip_input_into_pickle(task)
+    # 运行lingo
+    run_lingo_code_in_subprocess(task)
+    open_blend_and_import_obj("./vis.blend", task.obj_path)
     # 将动画渲染并输出为视频
-    render_video_in_subprocess("C:\lingo_web\\vis.blend",f"C:\lingo_web\\outputs\\{task.task_id}\\processed_videos.mp4")
+    render_video_in_subprocess("./vis.blend",f"./lingo_web/outputs/{task.task_id}/processed_videos.mp4")
     result_path=zip_folder_files(task.output_dir)
 
     for each_component in components_visible:
